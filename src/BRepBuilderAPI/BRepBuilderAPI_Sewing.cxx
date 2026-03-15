@@ -4074,26 +4074,6 @@ void BRepBuilderAPI_Sewing::CreateSewedShape()
     }
   }
 
-  // record modifications caused by myReShape->Apply(...);
-  for (Standard_Integer keyShapeIndex = 1; keyShapeIndex <= myOldShapes.Extent(); keyShapeIndex++) {
-    const TopoDS_Shape& keyShape = myOldShapes.FindKey(keyShapeIndex);
-    
-    TopTools_IndexedMapOfShape keySubShapes;
-    TopExp::MapShapes(keyShape, keySubShapes);
-
-    for (Standard_Integer subShapeIndex = 1; subShapeIndex <= keySubShapes.Size(); subShapeIndex++) {
-      const TopoDS_Shape &keySubShape = keySubShapes.FindKey(subShapeIndex);
-
-      if (myOldShapes.Contains(keySubShape))
-        continue;
-
-      TopoDS_Shape remapSubShape = myReShape->Apply(keySubShape);
-
-      if (!remapSubShape.IsSame(keySubShape))
-        myOldShapes.Add(keySubShape, remapSubShape);
-    }
-  }
-
   TopoDS_Shape aNewShape = aQuilt.Shells();
   Standard_Integer numsh = 0;
 
