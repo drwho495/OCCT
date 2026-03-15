@@ -1510,6 +1510,74 @@ BRepOffsetAPI_ThruSections::Generated(const TopoDS_Shape& S)
 }
 
 //=======================================================================
+//function : Modified
+//purpose  : 
+//=======================================================================
+
+const TopTools_ListOfShape&
+BRepOffsetAPI_ThruSections::Modified (const TopoDS_Shape& S)
+{
+  myModified.Clear();
+
+  if (S.ShapeType() == TopAbs_EDGE && myEdgeNewIndices.IsBound(S) && myBFGenerator) {
+    const TColStd_ListOfInteger *newIndices = myEdgeNewIndices.Seek(S);
+
+    if (newIndices->Size() == 0)
+      return myModified;
+    
+    TopTools_ListIteratorOfListOfShape inputWiresIt;
+
+    inputWiresIt.Initialize(myInputWires);
+
+    // first find the original wire that S was apart of 
+    // to find the NEW wire that it's counterpart is located in now.
+
+    int workingWireIndex = 1;
+    int wireIndex = -1;
+
+    for (; inputWiresIt.More(); inputWiresIt.Next()) {
+      const TopoDS_Shape &wire = inputWiresIt.Value();
+     
+      TopExp_Explorer wireExplorer(wire, TopAbs_EDGE);
+
+      for (; wireExplorer.More(); wireExplorer.Next()) {
+        const TopoDS_Shape &wireEdge = wireExplorer.Value();
+
+        if (wireEdge.IsSame(S)) {
+          wireIndex = workingWireIndex;
+          break;
+        }
+      }
+
+      if (wireIndex != -1)
+        break;
+
+      workingWireIndex++;
+    }
+
+    if (wireIndex != -1 && wireIndex <= myWires.Length()) {
+      const TopoDS_Shape &myWire = myWires(wireIndex);
+
+      if (!myWire.IsNull()) {
+        TopTools_IndexedMapOfShape mapper { };
+        TColStd_ListIteratorOfListOfInteger newIndicesIterator((*newIndices));
+        TopExp::MapShapes(myWire, TopAbs_EDGE, mapper);
+
+        for (; newIndicesIterator.More(); newIndicesIterator.Next()) {
+          const int &indice = newIndicesIterator.Value();
+
+          if (mapper.Size() >= indice) {
+            myModified.Append(mapper.FindKey(indice));
+          }
+        }
+      }
+    }
+  }
+
+  return myModified;
+}
+
+//=======================================================================
 //function : GeneratedFace
 //purpose  : 
 //=======================================================================
